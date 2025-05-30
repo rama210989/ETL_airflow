@@ -1,6 +1,7 @@
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
 *.log
+.env
+airflow.cfg
 *.sqlite
+/tmp/*
