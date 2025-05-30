@@ -13,18 +13,19 @@ default_args = {
     'retry_delay': timedelta(minutes=5),
 }
 
-# Use DAG context manager to define your DAG
+# Correctly initializing the DAG for Airflow 3.x
 with DAG(
-    dag_id='simple_etl_dag',
+    'simple_etl_dag',
     default_args=default_args,
     description='A simple ETL DAG',
-    schedule_interval='@daily',  # This is where the schedule is set
+    schedule_interval='@daily',  # Set the schedule interval
     catchup=False,
     max_active_runs=1
 ) as dag:
-
     # Create the task within the DAG context
     task = PythonOperator(
         task_id='print_hello',
         python_callable=print_hello
     )
+
+    # You can define more tasks here and set dependencies
