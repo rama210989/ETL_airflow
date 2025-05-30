@@ -1,6 +1,6 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from datetime import datetime, timedelta
+from datetime import datetime
 
 def print_hello():
     print("Hello, World!")
@@ -9,8 +9,6 @@ def print_hello():
 default_args = {
     'owner': 'airflow',
     'start_date': datetime(2025, 5, 30),
-    'retries': 1,
-    'retry_delay': timedelta(minutes=5),
 }
 
 # Correctly initializing the DAG for Airflow 3.x
