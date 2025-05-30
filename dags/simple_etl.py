@@ -2,9 +2,10 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime
 import pandas as pd
+import logging
 
 def extract():
-    # Sample data
+    logging.info("Extracting data...")
     data = {
         "name": ["Alice", "Bob", "Charlie"],
         "age": [25, 30, None]
@@ -13,11 +14,13 @@ def extract():
     df.to_csv("/tmp/extracted.csv", index=False)
 
 def transform():
+    logging.info("Transforming data...")
     df = pd.read_csv("/tmp/extracted.csv")
-    df['age'] = df['age'].fillna(df['age'].mean())  # simple imputation
+    df['age'] = df['age'].fillna(df['age'].mean())
     df.to_csv("/tmp/transformed.csv", index=False)
 
 def load():
+    logging.info("Loading data...")
     df = pd.read_csv("/tmp/transformed.csv")
     df.to_csv("/tmp/final_output.csv", index=False)
 
