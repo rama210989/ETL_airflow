@@ -29,5 +29,3 @@ task = PythonOperator(
     python_callable=print_hello,
     dag=dag  # Explicitly passing the DAG here
 )
-
-# You can define more tasks here and set dependencies
