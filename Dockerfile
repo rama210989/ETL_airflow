@@ -1,5 +1,5 @@
 # Use Astronomer's official Airflow image as the base image
-FROM quay.io/astronomer/astro-base:latest
+FROM astronomerinc/ap-airflow:2.1.2
 
 # Set environment variables (timezone, Airflow home directory)
 ENV AIRFLOW_HOME=/usr/local/airflow
