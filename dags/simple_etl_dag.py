@@ -5,18 +5,18 @@ from datetime import datetime
 def print_hello():
     print("Hello, World!")
 
-# Define the default_args dictionary
+# Define the default_args dictionary (DO NOT include schedule_interval here)
 default_args = {
     'owner': 'airflow',
     'start_date': datetime(2025, 5, 30),
 }
 
-# Create the DAG with schedule_interval outside default_args
+# Create the DAG with schedule_interval as a separate argument
 dag = DAG(
     'simple_etl_dag',
-    default_args=default_args,  # Pass default_args here
-    schedule_interval='@daily',  # Define schedule_interval directly here
-    catchup=False  # Avoid backfilling
+    default_args=default_args,  # Pass the default_args
+    schedule_interval='@daily',  # Pass schedule_interval directly here
+    catchup=False  # Optional: Avoid backfilling
 )
 
 # Create a task to print a message
