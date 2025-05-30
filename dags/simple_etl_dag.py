@@ -9,14 +9,14 @@ def print_hello():
 default_args = {
     'owner': 'airflow',
     'start_date': datetime(2025, 5, 30),
-    'schedule_interval': '@daily',  # Define schedule interval here
 }
 
-# Create the DAG
+# Create the DAG with schedule_interval outside default_args
 dag = DAG(
     'simple_etl_dag',
-    default_args=default_args,  # Pass default_args instead of direct kwargs
-    catchup=False  # Optional: Avoid backfilling if you don't want to run missed tasks
+    default_args=default_args,  # Pass default_args here
+    schedule_interval='@daily',  # Define schedule_interval directly here
+    catchup=False  # Avoid backfilling
 )
 
 # Create a task to print a message
