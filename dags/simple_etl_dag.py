@@ -13,19 +13,18 @@ default_args = {
     'retry_delay': timedelta(minutes=5),
 }
 
-# Directly initializing the DAG with all required arguments
-dag = DAG(
+# Use DAG context manager to define your DAG
+with DAG(
     dag_id='simple_etl_dag',
     default_args=default_args,
     description='A simple ETL DAG',
     schedule_interval='@daily',  # This is where the schedule is set
     catchup=False,
     max_active_runs=1
-)
+) as dag:
 
-# Create the task within the DAG context
-task = PythonOperator(
-    task_id='print_hello',
-    python_callable=print_hello,
-    dag=dag  # Explicitly passing the DAG here
-)
+    # Create the task within the DAG context
+    task = PythonOperator(
+        task_id='print_hello',
+        python_callable=print_hello
+    )
