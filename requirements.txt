@@ -1,2 +1,2 @@
-pandas
-
+pandas==1.5.3
+apache-airflow==2.8.1
