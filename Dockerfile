@@ -1,5 +1,5 @@
 # Use Astronomer's official Airflow image as the base image
-FROM astronomerinc/ap-airflow:2.1.2
+FROM astronomerinc/ap-airflow:latest
 
 # Set environment variables (timezone, Airflow home directory)
 ENV AIRFLOW_HOME=/usr/local/airflow
