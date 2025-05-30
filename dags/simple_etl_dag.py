@@ -1,57 +1,41 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+import pandas as pd
 from datetime import datetime
-import requests
-from bs4 import BeautifulSoup
-import csv
-import os
 
-# Function to scrape weather data from a weather website
+# Define the extract, transform, and load functions
 def extract_data():
-    url = "https://weather.com/weather/today/l/37.77,-122.42"  # San Francisco weather
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    
-    # Extracting data (let's say we scrape the temperature)
-    temperature = soup.find('span', {'class': 'CurrentConditions--tempValue--3KcTQ'}).get_text()
-    
-    return temperature
+    # Let's assume you're reading a CSV file. Replace with real data extraction logic
+    data = pd.DataFrame({
+        'name': ['Alice', 'Bob', 'Charlie'],
+        'age': [25, 30, 35]
+    })
+    return data
 
-# Function to transform the scraped data (here we will just format it)
 def transform_data(data):
-    cleaned_data = f"Temperature: {data}°F"
-    
-    # Save to CSV
-    if not os.path.exists('data.csv'):
-        with open('data.csv', mode='w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(["Weather Data"])
-            writer.writerow([cleaned_data])
-    
-    return 'data.csv'
+    # Adding a new column to the data (simple transformation)
+    data['age_in_months'] = data['age'] * 12
+    return data
 
-# Function to load the data (for now, we'll just print it or save as a CSV)
-def load_data(csv_file):
-    # Just a placeholder, since we're writing directly to CSV
-    print(f"Data saved to: {csv_file}")
+def load_data(data):
+    # Print the transformed data (you can replace this with DB or file write logic)
+    print(data)
+    return 'Data loaded successfully!'
 
-# Define default arguments for the DAG
+# Default arguments for the DAG
 default_args = {
     'owner': 'airflow',
-    'depends_on_past': False,
-    'start_date': datetime(2023, 5, 30),  # Change as needed
-    'retries': 1,
+    'start_date': datetime(2025, 5, 30),
 }
 
 # Define the DAG
 dag = DAG(
     'simple_etl_dag',
     default_args=default_args,
-    description='Simple ETL with Weather Data',
-    schedule_interval='@daily',
+    schedule_interval='@daily',  # Change to your desired schedule
 )
 
-# Define tasks
+# Define the tasks in the DAG
 extract_task = PythonOperator(
     task_id='extract_data',
     python_callable=extract_data,
@@ -61,16 +45,16 @@ extract_task = PythonOperator(
 transform_task = PythonOperator(
     task_id='transform_data',
     python_callable=transform_data,
-    op_args=['{{ task_instance.xcom_pull(task_ids="extract_data") }}'],  # Passing data from extract
+    op_args=['{{ task_instance.xcom_pull(task_ids="extract_data") }}'],  # Pulling data from extract task
     dag=dag,
 )
 
 load_task = PythonOperator(
     task_id='load_data',
     python_callable=load_data,
-    op_args=['{{ task_instance.xcom_pull(task_ids="transform_data") }}'],  # Passing data from transform
+    op_args=['{{ task_instance.xcom_pull(task_ids="transform_data") }}'],  # Pulling transformed data
     dag=dag,
 )
 
-# Set task dependencies
+# Define task dependencies
 extract_task >> transform_task >> load_task
