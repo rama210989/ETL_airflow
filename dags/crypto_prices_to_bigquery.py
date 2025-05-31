@@ -1,18 +1,19 @@
 from airflow import DAG
 from airflow.decorators import task
 from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
-from airflow.utils.dates import days_ago
+from datetime import datetime, timedelta
 import requests
 import pandas as pd
+
 
 BQ_PROJECT = 'crypto-etl-project-461506'
 BQ_DATASET = 'crypto_data'
 BQ_TABLE = 'prices'
 
 default_args = {
-    'start_date': days_ago(1),
-    'retries': 1,
+    'start_date': datetime.utcnow() - timedelta(days=1),  # ✅
 }
+
 
 with DAG(
     dag_id='crypto_prices_to_bigquery_v2',
