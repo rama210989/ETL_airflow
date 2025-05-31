@@ -10,13 +10,12 @@ BQ_DATASET = 'crypto_data'
 BQ_TABLE = 'prices'
 
 default_args = {
-    'start_date': datetime.utcnow() - timedelta(days=1),  # ✅
+    'start_date': datetime.utcnow() - timedelta(days=1),
 }
-
 
 with DAG(
     dag_id='crypto_prices_to_bigquery_v2',
-    schedule_interval='*/15 * * * *',  # every 15 minutes
+    schedule='*/15 * * * *',  # every 15 minutes
     default_args=default_args,
     catchup=False,
     max_active_runs=1,
@@ -67,7 +66,6 @@ with DAG(
         gcp_conn_id="google_cloud_default",
     )
 
-    # DAG structure
     extracted = extract()
     transformed = transform(extracted)
     sql = build_sql(transformed)
