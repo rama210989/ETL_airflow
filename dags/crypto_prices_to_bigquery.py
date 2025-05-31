@@ -4,7 +4,6 @@ from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobO
 from airflow.utils.dates import days_ago
 import requests
 import pandas as pd
-import json
 
 BQ_PROJECT = 'crypto-etl-project-461506'
 BQ_DATASET = 'crypto_data'
@@ -17,7 +16,7 @@ default_args = {
 
 with DAG(
     dag_id='crypto_prices_to_bigquery_v2',
-    schedule_interval='*/15 * * * *',
+    schedule_interval='*/15 * * * *',  # every 15 minutes
     default_args=default_args,
     catchup=False,
     max_active_runs=1,
@@ -35,7 +34,6 @@ with DAG(
     def transform(data):
         current_time = pd.Timestamp.utcnow()
         rows = []
-
         for coin, price_info in data.items():
             row = {
                 "coin": coin,
@@ -43,36 +41,34 @@ with DAG(
                 "timestamp": current_time.isoformat()
             }
             rows.append(row)
-
         return rows
 
     @task()
-    def prepare_sql(rows):
+    def build_sql(rows):
         values = ",\n".join([
-            f"('{row['coin']}', {row['price_usd']}, TIMESTAMP('{row['timestamp']}'))"
-            for row in rows
+            f"('{r['coin']}', {r['price_usd']}, TIMESTAMP('{r['timestamp']}'))"
+            for r in rows
         ])
-
-        sql = f"""
+        return f"""
         INSERT INTO `{BQ_PROJECT}.{BQ_DATASET}.{BQ_TABLE}` (coin, price_usd, timestamp)
         VALUES
         {values}
         """
-        return sql
 
-    sql_task = BigQueryInsertJobOperator(
+    load = BigQueryInsertJobOperator(
         task_id='load_to_bigquery',
         configuration={
             "query": {
-                "query": "{{ ti.xcom_pull(task_ids='prepare_sql') }}",
+                "query": "{{ ti.xcom_pull(task_ids='build_sql') }}",
                 "useLegacySql": False,
             }
         },
-        location="US",  # or your dataset's region
+        location="US",
         gcp_conn_id="google_cloud_default",
     )
 
-    raw = extract()
-    transformed = transform(raw)
-    sql = prepare_sql(transformed)
-    sql_task << sql
+    # DAG structure
+    extracted = extract()
+    transformed = transform(extracted)
+    sql = build_sql(transformed)
+    load << sql
