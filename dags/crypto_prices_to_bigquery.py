@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 import requests
 import pandas as pd
 
-
 BQ_PROJECT = 'crypto-etl-project-461506'
 BQ_DATASET = 'crypto_data'
 BQ_TABLE = 'prices'
