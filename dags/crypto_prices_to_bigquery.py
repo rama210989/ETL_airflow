@@ -35,7 +35,7 @@ with DAG(
         rows = []
         for coin, price_info in data.items():
             row = {
-                "coin": coin,
+                "name": coin,  # changed 'coin' to 'name' here
                 "price_usd": float(price_info.get("usd", 0.0)),
                 "timestamp": current_time.isoformat()
             }
@@ -45,11 +45,11 @@ with DAG(
     @task()
     def build_sql(rows):
         values = ",\n".join([
-            f"('{r['coin']}', {r['price_usd']}, TIMESTAMP('{r['timestamp']}'))"
+            f"('{r['name']}', {r['price_usd']}, TIMESTAMP('{r['timestamp']}'))"
             for r in rows
         ])
         return f"""
-        INSERT INTO `{BQ_PROJECT}.{BQ_DATASET}.{BQ_TABLE}` (coin, price_usd, timestamp)
+        INSERT INTO `{BQ_PROJECT}.{BQ_DATASET}.{BQ_TABLE}` (name, price_usd, timestamp)
         VALUES
         {values}
         """
