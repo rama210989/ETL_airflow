@@ -1,11 +1,11 @@
 from airflow import DAG
 from airflow.decorators import task
-from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertRowsOperator
+from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
 from airflow.utils.dates import days_ago
 import requests
 import pandas as pd
+import json
 
-# Constants
 BQ_PROJECT = 'crypto-etl-project-461506'
 BQ_DATASET = 'crypto_data'
 BQ_TABLE = 'prices'
@@ -17,7 +17,7 @@ default_args = {
 
 with DAG(
     dag_id='crypto_prices_to_bigquery_v2',
-    schedule_interval='*/15 * * * *',  # every 15 minutes
+    schedule_interval='*/15 * * * *',
     default_args=default_args,
     catchup=False,
     max_active_runs=1,
@@ -26,9 +26,6 @@ with DAG(
 
     @task()
     def extract():
-        """
-        Extract latest crypto prices from CoinGecko API.
-        """
         url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd"
         response = requests.get(url)
         response.raise_for_status()
@@ -36,33 +33,46 @@ with DAG(
 
     @task()
     def transform(data):
-        """
-        Transform the raw JSON from CoinGecko into rows ready for BigQuery.
-        """
         current_time = pd.Timestamp.utcnow()
-        records = []
+        rows = []
 
         for coin, price_info in data.items():
-            record = {
+            row = {
                 "coin": coin,
                 "price_usd": float(price_info.get("usd", 0.0)),
                 "timestamp": current_time.isoformat()
             }
-            records.append(record)
+            rows.append(row)
 
-        return records
+        return rows
 
-    # Insert into BigQuery table
-    load_to_bq = BigQueryInsertRowsOperator(
+    @task()
+    def prepare_sql(rows):
+        values = ",\n".join([
+            f"('{row['coin']}', {row['price_usd']}, TIMESTAMP('{row['timestamp']}'))"
+            for row in rows
+        ])
+
+        sql = f"""
+        INSERT INTO `{BQ_PROJECT}.{BQ_DATASET}.{BQ_TABLE}` (coin, price_usd, timestamp)
+        VALUES
+        {values}
+        """
+        return sql
+
+    sql_task = BigQueryInsertJobOperator(
         task_id='load_to_bigquery',
-        project_id=BQ_PROJECT,
-        dataset_id=BQ_DATASET,
-        table_id=BQ_TABLE,
-        rows="{{ ti.xcom_pull(task_ids='transform') }}",
-        gcp_conn_id='google_cloud_default',
+        configuration={
+            "query": {
+                "query": "{{ ti.xcom_pull(task_ids='prepare_sql') }}",
+                "useLegacySql": False,
+            }
+        },
+        location="US",  # or your dataset's region
+        gcp_conn_id="google_cloud_default",
     )
 
-    # Define task dependencies
-    raw_data = extract()
-    transformed_data = transform(raw_data)
-    load_to_bq << transformed_data
+    raw = extract()
+    transformed = transform(raw)
+    sql = prepare_sql(transformed)
+    sql_task << sql
